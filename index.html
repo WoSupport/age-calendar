@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>年龄计算器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-full flex flex-col justify-between p-4 sm:p-6">
+
+    <main class="max-w-xl w-full mx-auto my-auto bg-white rounded-3xl shadow-xl border border-slate-100 p-6 sm:p-8 space-y-8">
+        <div class="text-center space-y-2">
+            <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">出生天数</h1>
+        </div>
+
+        <div id="topInputAnchor"></div>
+
+        <div id="inputSection" class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+            <label for="birthDate" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">设置出生日期</label>
+            <div class="flex gap-2">
+                <input type="date" id="birthDate" class="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base font-medium" />
+                <button id="saveBtn" class="px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition duration-150 active:scale-[0.98]">
+                    保存
+                </button>
+            </div>
+            <p id="savedNotification" class="text-xs text-emerald-600 font-medium mt-2 hidden flex items-center gap-1">
+                ✓ 生日已保存！下次自动加载。
+            </p>
+        </div>
+
+        <div id="resultsArea" class="space-y-4 hidden">
+            <div class="bg-indigo-50/50 border border-indigo-100/80 rounded-2xl p-5 text-center">
+                <p id="totalDaysText" class="text-4xl font-black text-indigo-900">0</p>
+            </div>
+            <div class="bg-purple-50/50 border border-purple-100/80 rounded-2xl p-5 text-center">
+                <p id="weeksDaysText" class="text-2xl font-extrabold text-purple-900">0 <span class="text-sm font-normal">周</span> 0 <span class="text-sm font-normal">天</span></p>
+            </div>
+            <div class="bg-rose-50/50 border border-rose-100/80 rounded-2xl p-5 text-center">
+                <p id="monthsDaysText" class="text-2xl font-extrabold text-rose-900">0 <span class="text-sm font-normal">月</span> 0 <span class="text-sm font-normal">天</span></p>
+            </div>
+        </div>
+
+        <div id="placeholderArea" class="text-center py-8 text-slate-400 space-y-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="text-sm font-medium">选择并保存你的生日</p>
+        </div>
+
+        <div id="bottomInputAnchor"></div>
+    </main>
+
+    <script>
+        const birthDateInput = document.getElementById('birthDate');
+        const saveBtn = document.getElementById('saveBtn');
+        const savedNotification = document.getElementById('savedNotification');
+        const resultsArea = document.getElementById('resultsArea');
+        const placeholderArea = document.getElementById('placeholderArea');
+        const inputSection = document.getElementById('inputSection');
+        const topInputAnchor = document.getElementById('topInputAnchor');
+        const bottomInputAnchor = document.getElementById('bottomInputAnchor');
+
+        const totalDaysText = document.getElementById('totalDaysText');
+        const weeksDaysText = document.getElementById('weeksDaysText');
+        const monthsDaysText = document.getElementById('monthsDaysText');
+
+        function moveInputToBottom() {
+            bottomInputAnchor.before(inputSection);
+        }
+
+        function moveInputToTop() {
+            topInputAnchor.after(inputSection);
+        }
+
+        // Parse YYYY-MM-DD string into a local Date at midnight
+        function parseLocalDate(dateStr) {
+            const [year, month, day] = dateStr.split('-').map(Number);
+            return new Date(year, month - 1, day);  // month-1 because JS months are 0-based
+        }
+
+        // Get today's date in local timezone at midnight
+        function getTodayMidnight() {
+            const now = new Date();
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        }
+
+        function calculateAge(selectedDateStr) {
+            if (!selectedDateStr) return;
+
+            const birthDate = parseLocalDate(selectedDateStr);
+            const today = getTodayMidnight();
+
+            const diffTime = today - birthDate;
+            
+            if (isNaN(diffTime) || diffTime < 0) {
+                resultsArea.classList.add('hidden');
+                placeholderArea.classList.remove('hidden');
+                placeholderArea.innerHTML = `<p class="text-sm text-rose-500 font-semibold">请选择过去的日期</p>`;
+                moveInputToTop();
+                return;
+            }
+
+            resultsArea.classList.remove('hidden');
+            placeholderArea.classList.add('hidden');
+            moveInputToBottom();
+
+            // Style 1: Total Days
+            const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            totalDaysText.innerHTML = `${totalDays.toLocaleString('zh-CN')} <span class="text-base font-medium text-indigo-700">天</span>`;
+
+            // Style 2: Weeks & Days
+            const weeks = Math.floor(totalDays / 7);
+            const remainingDays = totalDays % 7;
+            weeksDaysText.innerHTML = `${weeks.toLocaleString('zh-CN')} <span class="text-base font-medium text-purple-700">周</span> ${remainingDays} <span class="text-base font-medium text-purple-700">天</span>`;
+
+            // Style 3: Months & Days (Calendar-accurate calculations)
+            let diffYears = today.getFullYear() - birthDate.getFullYear();
+            let diffMonths = today.getMonth() - birthDate.getMonth();
+            let diffDays = today.getDate() - birthDate.getDate();
+
+            if (diffDays < 0) {
+                diffMonths--;
+                const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                diffDays += lastMonth.getDate();
+            }
+            if (diffMonths < 0) {
+                diffYears--;
+                diffMonths += 12;
+            }
+
+            const totalMonths = (diffYears * 12) + diffMonths;
+            monthsDaysText.innerHTML = `${totalMonths.toLocaleString('zh-CN')} <span class="text-base font-medium text-rose-700">月</span> ${diffDays} <span class="text-base font-medium text-rose-700">天</span>`;
+        }
+
+        saveBtn.addEventListener('click', () => {
+            const dateValue = birthDateInput.value;
+            if (dateValue) {
+                localStorage.setItem('savedBirthDate', dateValue);
+                calculateAge(dateValue);
+                
+                savedNotification.classList.remove('hidden');
+                setTimeout(() => {
+                    savedNotification.classList.add('hidden');
+                }, 3500);
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedDate = localStorage.getItem('savedBirthDate');
+            if (savedDate) {
+                birthDateInput.value = savedDate;
+                calculateAge(savedDate);
+            }
+        });
+    </script>
+</body>
+</html>
