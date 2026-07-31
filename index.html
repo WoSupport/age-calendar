@@ -118,15 +118,24 @@
             const remainingDays = totalDays % 7;
             weeksDaysText.innerHTML = `${weeks.toLocaleString('zh-CN')} <span class="text-base font-medium text-purple-700">周</span> ${remainingDays} <span class="text-base font-medium text-purple-700">天</span>`;
 
-            // Style 3: Months & Days (Calendar-accurate calculations)
+            // Style 3: Months & Days (Calendar-accurate calculations with End-of-Month Clamping)
             let diffYears = today.getFullYear() - birthDate.getFullYear();
             let diffMonths = today.getMonth() - birthDate.getMonth();
             let diffDays = today.getDate() - birthDate.getDate();
 
             if (diffDays < 0) {
-                diffMonths--;
-                const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-                diffDays += lastMonth.getDate();
+                const currentMonthLastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+                
+                // End-of-month clamping: If today is the last day of a shorter month (e.g. Feb 28),
+                // and birth date was >= currentMonthLastDay (e.g. Jan 31 >= 28), then 1 full month is completed.
+                if (today.getDate() === currentMonthLastDay && birthDate.getDate() >= currentMonthLastDay) {
+                    diffDays = 0;
+                } else {
+                    diffMonths--;
+                    const prevMonthLastDay = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+                    const effectiveBirthDay = Math.min(birthDate.getDate(), prevMonthLastDay);
+                    diffDays = today.getDate() + (prevMonthLastDay - effectiveBirthDay);
+                }
             }
             if (diffMonths < 0) {
                 diffYears--;
